@@ -52,7 +52,7 @@ try {
         } else {
             // If there are errors, display them
             foreach ($errors as $error) {
-                echo $error . '<br>';
+                echo '<script>alert("' . $error . '");</script>';
             }
         }
     }

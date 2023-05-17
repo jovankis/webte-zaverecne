@@ -23,7 +23,7 @@ try {
             } else if ($user['role'] === 'Študent') {
                 header('Location: /zaverecnezadanie/student/student.php');
             } else {
-                echo "Nesprávna rola";
+                '<script>alert("Nesprávna rola");</script>';
             }
             exit;
         } else {
