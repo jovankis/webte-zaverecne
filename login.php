@@ -27,7 +27,7 @@ try {
             }
             exit;
         } else {
-            echo "Nespravný email alebo heslo";
+            echo '<script>alert("Nesprávny email alebo heslo.");</script>';
         }
 
     }
@@ -45,6 +45,7 @@ try {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Záverečné zadanie</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <br>
@@ -55,17 +56,20 @@ try {
             <form method="post">
                 <div class="form-group">
                     <label for="email">Emailová adresa</label>
-                    <input type="email" class="form-control" id="email" name="email" placeholder="Zadajte email">
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Zadajte email" onblur="validateEmail(this)">
+                    <div id="emailError" class="error-message"></div>
                 </div>
                 <div class="form-group">
                     <label for="password">Heslo</label>
-                    <input type="password" class="form-control" id="password" name="password"
-                           placeholder="Zadajte heslo">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Zadajte heslo" onblur="validatePassword(this)">
+                    <div id="passwordError" class="error-message"></div>
                 </div>
-                <button type="submit" class="btn btn-primary">Prihlásiť</button>
+                <button type="submit" class="btn btn-primary" onclick="return validateForm()" disabled>Prihlásiť</button>
+
             </form>
         </div>
     </div>
 </div>
+<script type="text/javascript" src="loginScript.js"></script>
 </body>
 </html>
