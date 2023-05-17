@@ -28,6 +28,16 @@ try {
             $errors[] = 'Prosím, vyberte platnú rolu.';
         }
 
+        // Check if email already exists in the database
+        $sql = "SELECT COUNT(*) FROM users WHERE email = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$email]);
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            $errors[] = 'Email už existuje v databáze.';
+        }
+
         // If there are no errors, insert the user into the database
         if (empty($errors)) {
             // Password hashing for security
@@ -42,10 +52,11 @@ try {
         } else {
             // If there are errors, display them
             foreach ($errors as $error) {
-                echo $error . '<br>';
+                echo '<script>alert("' . $error . '");</script>';
             }
         }
     }
+
 
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage();
@@ -61,7 +72,7 @@ $pdo = null;
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Záverečné zadanie</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
@@ -73,21 +84,29 @@ $pdo = null;
             <form autocomplete="off" method="post" onsubmit="return validateForm()">
                 <div class="form-group">
                     <label for="name">Meno</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Zadajte meno">
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Zadajte meno"
+                           onblur="validateName(this); checkFormValidity()">
+                    <div id="nameError" class="error-message"></div>
+
                 </div>
                 <div class="form-group">
                     <label for="surname">Priezvisko</label>
                     <input type="text" class="form-control" id="surname" name="surname"
-                           placeholder="Zadajte priezvisko">
+                           placeholder="Zadajte priezvisko" onblur="validateSurname(this); checkFormValidity()">
+                    <div id="surnameError" class="error-message"></div>
                 </div>
                 <div class="form-group">
                     <label for="email">Emailová adresa</label>
-                    <input type="email" class="form-control" id="email" name="email" placeholder="Zadajte email">
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Zadajte email"
+                           onblur="validateEmail(this); checkFormValidity()">
+                    <div id="emailError" class="error-message"></div>
                 </div>
+
                 <div class="form-group">
                     <label for="password">Heslo</label>
                     <input type="password" class="form-control" id="password" name="password"
-                           placeholder="Zadajte heslo">
+                           placeholder="Zadajte heslo" onblur="validatePassword(this); checkFormValidity()">
+                    <div id="passwordError" class="error-message"></div>
                 </div>
                 <div class="form-group">
                     <label for="role">Chcem sa registrovať ako</label>
@@ -96,7 +115,7 @@ $pdo = null;
                         <option>Učiteľ</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary ">Registrovať</button>
+                <button type="submit" class="btn btn-primary" id="registerButton" disabled>Registrovať</button>
             </form>
             <br>
             <br>
