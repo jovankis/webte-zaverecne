@@ -45,7 +45,7 @@ try {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Záverečné zadanie</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <br>
