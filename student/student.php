@@ -13,7 +13,9 @@
 
 
 //$latexFile = "../zaverecne_zadanie/blokovka01pr.tex";
-$latexFile = "../zaverecne_zadanie/odozva01pr.tex";
+//$latexFile = "../zaverecne_zadanie/blokovka02pr.tex";
+//$latexFile = "../zaverecne_zadanie/odozva01pr.tex";
+$latexFile = "../zaverecne_zadanie/odozva02pr.tex";
 // Read the contents of the LaTeX file
 $latexContent = file_get_contents($latexFile);
 
@@ -48,8 +50,20 @@ foreach ($matches as $match) {
         $task = preg_replace('/\\\\includegraphics(?:\[.*?\])?\{(.+?)\}/', '', $task);
         $task = trim($task);
         $imagePath = basename($imagePath);
-
     }
+
+// If the task contains an equation wrapped with $
+    if (preg_match('/\$(.*?)\$/', $task, $dollarWrapEquation)) {
+        $dollarWrappedEquation = $dollarWrapEquation[0];
+        $unwrappedEquation = $dollarWrapEquation[1];
+
+        $equationWithTags = '\\begin{equation*}' . $unwrappedEquation . '\\end{equation*}';
+
+        $task = str_replace($dollarWrappedEquation, $equationWithTags, $task);
+    }
+
+    $task = str_replace(['\begin{equation*}', '\end{equation*}'], ['\\(', '\\)'], $task);
+
 
     // Create object
     $object = array(
@@ -65,21 +79,6 @@ foreach ($matches as $match) {
     $objects[] = $object;
 }
 
-function formatObjects($objects)
-{
-    $output = "";
-    foreach ($objects as $object) {
-        $output .= "Section: " . $object['section'] . "<br>";
-        $output .= "Task: " . $object['task'] . "<br>";
-        $output .= "Task Equation: <span class='math-tex'>\\(" . $object['taskEquation'] . "\\)</span><br>";
-        $output .= "Solution: " . $object['solution'] . "<br>";
-        $output .= "Solution Question: <span class='math-tex'>\\(" . $object['solutionQuestion'] . "\\)</span><br>";
-        $output .= "Image Path: " . $object['imagePath'] . "<br>";
-        $output .= "<br>";
-        $output .= "<div id='1' class='editorContainer' style='width: 500px; height: 500px;'></div>";
-    }
-    return $output;
-}
 
 function displayObjects($objects)
 {
@@ -90,13 +89,17 @@ function displayObjects($objects)
         echo '<div class="card mb-4">';
         echo '<div class="card-body text-center">';
         echo '<h5 class="card-title">' . $object['section'] . '</h5>';
-        echo '<p class="card-text">' . $object['task'] . '</p>';
-//        echo '<p class="card-text">' . $object['solution'] . '</p>';
-//        echo '<p class="card-text"><span class="math-tex">\\(' . $object['solutionQuestion'] . '\\)</span></p>';
+        $task = $object['task'];
+        $taskParts = explode('$', $task);
+        for ($i = 1; $i < count($taskParts); $i += 2) {
+            $taskParts[$i] = '\\begin{equation*}' . $taskParts[$i] . '\\end{equation*}';
+        }
+        $task = implode('', $taskParts);
+        echo '<p class="card-text math-tex">' . htmlspecialchars($task) . '</p>';
         if (!empty($object['imagePath'])) {
             echo '<img src="../zaverecne_zadanie/images/' . $object['imagePath'] . '" class="img-fluid">';
         }
-        echo '<div id="' . $object['section'] . '" class="editorContainer mt-4" style="width: 500px; height: 200px;"></div>';
+        echo '<div id="' . $object['section'] . '" class="editorContainer mt-4" style="width: 500px; height: 150px;"></div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';
@@ -133,13 +136,11 @@ displayObjects($objects);
 </div>
 <div id="displayArea"></div>
 
-
 <script>
     document.getElementById('displayButton').addEventListener('click', function () {
         document.getElementById('tasks').style.display = "block";
         this.style.display = 'none';  // Hide the button
     });
-
 </script>
 <script type="text/javascript" src="wiris.js"></script>
 </body>
