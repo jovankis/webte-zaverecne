@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Europe/Bratislava');
 
 if (!isset($_SESSION['user'])) {
     echo "<h1>Nie ste prihlasený</h1>";
@@ -17,81 +18,54 @@ if ($_SESSION['role'] !== 'Študent') {
 }
 
 if (isset($_GET['logout'])) {
-    //unset and destroy session on logout
     session_unset();
     session_destroy();
-    header('Location: ../index.php'); //redirect to your desired link
+    header('Location: ../index.php');
     exit;
 }
-
-$latexFile = "../zaverecne_zadanie/blokovka01pr.tex";
-//$latexFile = "../zaverecne_zadanie/blokovka02pr.tex";
-//$latexFile = "../zaverecne_zadanie/odozva01pr.tex";
-//$latexFile = "../zaverecne_zadanie/odozva02pr.tex";
-// Read the contents of the LaTeX file
-$latexContent = file_get_contents($latexFile);
-// Parse the content into objects
 $objects = array();
-preg_match_all('/\\\\section\*{(.+?)}\s*\\\\begin{task}(.*?)\\\\end{task}\s*\\\\begin{solution}(.*?)\\\\end{solution}/s', $latexContent, $matches, PREG_SET_ORDER);
-foreach ($matches as $match) {
-    $section = $match[1];
-    $task = trim($match[2]);
-    $solution = trim($match[3]);
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=zav_zad', 'xkis', 'password');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $stmt = $pdo->prepare('SELECT t.section, t.task_description, t.solution, t.image_path, f.points, f.generating_enabled, f.starting_date, f.ending_date 
+                       FROM tasks t 
+                       INNER JOIN files f ON t.file_id = f.id');
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $taskEquation = '';
-    $solutionQuestion = '';
-    $imagePath = '';
+    foreach ($rows as $row) {
+        $section = $row['section'];
+        $task = $row['task_description'];
+        $solution = $row['solution'];
+        $imagePath = $row['image_path'];
+        $points = $row['points'];
+        $generating_enabled = $row['generating_enabled'];
+        $starting_date = $row['starting_date'];
+        $ending_date = $row['ending_date'];
 
-    // Extract task equation
-    preg_match('/\\\\begin{equation\*}(.*?)\\\\end{equation\*}/s', $task, $taskEquationMatch);
-    if (!empty($taskEquationMatch[1])) {
-        $taskEquation = trim($taskEquationMatch[1]);
+        $object = array(
+            'section' => $section,
+            'task' => $task,
+            'solution' => $solution,
+            'imagePath' => $imagePath,
+            'points' => $points,
+        );
+
+        $current_date = time();
+        $starting_date = $row['starting_date'] ? strtotime($row['starting_date']) : null;
+        $ending_date = $row['ending_date'] ? strtotime($row['ending_date']) : null;
+        if ($generating_enabled == 1 &&
+            (($starting_date === null || $current_date >= $starting_date) && ($ending_date === null || $current_date <= $ending_date))) {
+            $objects[] = $object;
+        }
     }
 
-    // Extract solution question
-    preg_match('/\\\\begin{equation\*}(.*?)\\\\end{equation\*}/s', $solution, $solutionQuestionMatch);
-    if (!empty($solutionQuestionMatch[1])) {
-        $solutionQuestion = trim($solutionQuestionMatch[1]);
-    }
 
-    // Extract image path
-    preg_match('/\\\\includegraphics(?:\[.*?\])?\{(.+?)\}/', $task, $imagePathMatch);
-    if (!empty($imagePathMatch[1])) {
-        $imagePath = $imagePathMatch[1];
-        $task = preg_replace('/\\\\includegraphics(?:\[.*?\])?\{(.+?)\}/', '', $task);
-        $task = trim($task);
-        $imagePath = basename($imagePath);
-    }
-
-// If the task contains an equation wrapped with $
-    if (preg_match('/\$(.*?)\$/', $task, $dollarWrapEquation)) {
-        $dollarWrappedEquation = $dollarWrapEquation[0];
-        $unwrappedEquation = $dollarWrapEquation[1];
-
-        $equationWithTags = '\\begin{equation*}' . $unwrappedEquation . '\\end{equation*}';
-
-        $task = str_replace($dollarWrappedEquation, $equationWithTags, $task);
-    }
-
-    $task = str_replace(['\begin{equation*}', '\end{equation*}'], ['\\(', '\\)'], $task);
-
-
-    // Create object
-    $object = array(
-        'section' => $section,
-        'task' => $task,
-        'taskEquation' => $taskEquation,
-        'solution' => $solution,
-        'solutionQuestion' => $solutionQuestion,
-        'imagePath' => $imagePath
-    );
-
-    // Add object to the list
-    $objects[] = $object;
+} catch (PDOException $e) {
+    echo 'Connection failed: ' . $e->getMessage();
 }
 
-
-function displayObjects($objects)
+function displayObjects($objects): void
 {
     echo '<div id="tasks" class="container" style="display: none;">';
     foreach ($objects as $object) {
@@ -108,7 +82,7 @@ function displayObjects($objects)
         $task = implode('', $taskParts);
         echo '<p class="card-text math-tex">' . htmlspecialchars($task) . '</p>';
         if (!empty($object['imagePath'])) {
-            echo '<img src="../zaverecne_zadanie/images/' . $object['imagePath'] . '" class="img-fluid">';
+            echo '<img src="../' . $object['imagePath'] . '" class="img-fluid">';
         }
         echo '<div id="' . $object['section'] . '" class="editorContainer mt-4" style="width: 500px; height: 150px;"></div>';
 
@@ -116,6 +90,7 @@ function displayObjects($objects)
         echo '<button type="submit" id="submit_' . $object['section'] . '" class="btn btn-primary mt-3">Submit</button>';
 
         echo '<div id="answer_' . $object['section'] . '" class="answer mt-3"></div>';
+        echo '<p id="points_' . $object['section'] . '">0 / ' . $object['points'] . ' points</p>';
         echo '<input type="hidden" id="solution_' . $object['section'] . '" value="' . htmlspecialchars($object['solution']) . '">';
 
         echo '</div>';
@@ -180,9 +155,9 @@ displayObjects($objects);
 <script>
     document.getElementById('displayButton').addEventListener('click', function () {
         document.getElementById('tasks').style.display = "block";
-        this.style.display = 'none';  // Hide the button
+        this.style.display = 'none';
     });
 </script>
-<script type="text/javascript" src="wiris.js"></script>
+<script type="text/javascript" src="student.js"></script>
 </body>
 </html>
