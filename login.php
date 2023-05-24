@@ -65,7 +65,14 @@ try {
                     <div id="passwordError" class="error-message"></div>
                 </div>
                 <button type="submit" class="btn btn-primary" onclick="return validateForm()" disabled>Prihlásiť</button>
-
+                <br>
+                <br>
+                <div class="row justify-content-center">
+                    <div>
+                        <text>Nie ste registrovaný?</text>
+                        <a href="index.php">registrácia</a>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
