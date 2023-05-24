@@ -1,24 +1,35 @@
 <?php
-//session_start();
-//
-//if (!isset($_SESSION['user'])) {
-//    echo "Nie ste prihlasený";
-//    exit;
-//}
-//
-//if ($_SESSION['role'] !== 'Študent') {
-//    echo "Nemáte povolenia";
-//    exit;
-//}
+session_start();
 
+if (!isset($_SESSION['user'])) {
+    echo "<h1>Nie ste prihlasený</h1>";
+    echo "<div class='row justify - content - center'>";
+    echo "<div>";
+    echo "<a href = '../login.php' > prihláste sa </a >";
+    echo "</div>";
+    echo "</div>";
+    exit;
+}
 
-//$latexFile = "../zaverecne_zadanie/blokovka01pr.tex";
+if ($_SESSION['role'] !== 'Študent') {
+    echo "Nemáte povolenia";
+    exit;
+}
+
+if (isset($_GET['logout'])) {
+    //unset and destroy session on logout
+    session_unset();
+    session_destroy();
+    header('Location: ../index.php'); //redirect to your desired link
+    exit;
+}
+
+$latexFile = "../zaverecne_zadanie/blokovka01pr.tex";
 //$latexFile = "../zaverecne_zadanie/blokovka02pr.tex";
 //$latexFile = "../zaverecne_zadanie/odozva01pr.tex";
-$latexFile = "../zaverecne_zadanie/odozva02pr.tex";
+//$latexFile = "../zaverecne_zadanie/odozva02pr.tex";
 // Read the contents of the LaTeX file
 $latexContent = file_get_contents($latexFile);
-
 // Parse the content into objects
 $objects = array();
 preg_match_all('/\\\\section\*{(.+?)}\s*\\\\begin{task}(.*?)\\\\end{task}\s*\\\\begin{solution}(.*?)\\\\end{solution}/s', $latexContent, $matches, PREG_SET_ORDER);
@@ -100,6 +111,13 @@ function displayObjects($objects)
             echo '<img src="../zaverecne_zadanie/images/' . $object['imagePath'] . '" class="img-fluid">';
         }
         echo '<div id="' . $object['section'] . '" class="editorContainer mt-4" style="width: 500px; height: 150px;"></div>';
+
+        // Submit button
+        echo '<button type="submit" id="submit_' . $object['section'] . '" class="btn btn-primary mt-3">Submit</button>';
+
+        echo '<div id="answer_' . $object['section'] . '" class="answer mt-3"></div>';
+        echo '<input type="hidden" id="solution_' . $object['section'] . '" value="' . htmlspecialchars($object['solution']) . '">';
+
         echo '</div>';
         echo '</div>';
         echo '</div>';
@@ -108,6 +126,7 @@ function displayObjects($objects)
 
     echo '</div>';
 }
+
 
 ?>
 
@@ -120,11 +139,33 @@ function displayObjects($objects)
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://www.wiris.net/demo/editor/editor"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="../index.php">Welcome page</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="./student.php"><i class="fa fa-home"></i>Home<span
+                            class="sr-only">(current)</span></a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <span class="navbar-text text-light"><?php echo($_SESSION['user']['name'] . " " . $_SESSION['user']['surname']); ?></span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="?logout=true">Logout</a>
+            </li>
+        </ul>
+    </div>
+</nav>
 <h1 class="h1 text-center">Test</h1>
 <br>
 <?php

@@ -19,3 +19,29 @@ window.addEventListener('load', function () {
         editors[editorContainer.id] = editor;
     }
 });
+
+$(document).ready(function() {
+    $("button[id^='submit_']").click(function() {
+        var id = $(this).attr('id').replace('submit_', '');
+        var editor = editors[id];
+        var mathmlContent = editor.getMathML();
+        console.log(mathmlContent);
+
+        // Get the correct answer from the hidden input field
+        var correctAnswer = document.getElementById('solution_' + id).value;
+        var answerSection = document.getElementById('answer_' + id);
+        answerSection.innerHTML = '<p>Vaša odpoveď: ' + mathmlContent + '</p>';
+        answerSection.innerHTML += '<p>Správna odpoveď: ' + correctAnswer + '</p>';
+
+        // Render LaTeX
+        MathJax.typeset();
+
+        // Remove the editor and submit button after submission
+        var editorContainer = document.getElementById(id);
+        var submitButton = document.getElementById('submit_' + id);
+
+        editorContainer.remove();
+        submitButton.remove();
+    });
+});
+
