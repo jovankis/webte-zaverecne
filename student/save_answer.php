@@ -35,3 +35,5 @@ $answer = $_POST['answer'];
 
 $stmt = $pdo->prepare("INSERT INTO student_answer (student_id, name, surname, section, answer) VALUES (?, ?, ?, ?, ?)");
 $stmt->execute([$student_id, $name, $surname, $task_id, $answer]);
+$stmt = $pdo->prepare("UPDATE gen_history SET submitted = 1 WHERE student_id = ? AND time = ? AND section = ?");
+$stmt->execute([$_SESSION['user']['id'], $_SESSION['time'], $task_id]);

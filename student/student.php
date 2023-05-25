@@ -23,6 +23,8 @@ if (isset($_GET['logout'])) {
     header('Location: ../index.php');
     exit;
 }
+
+$_SESSION['time'] = time();
 $objects = array();
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=zav_zad', 'xkis', 'password');
@@ -148,7 +150,7 @@ function displayObjects($objects): void
                 <span class="navbar-text text-light"><?php echo($_SESSION['user']['name'] . " " . $_SESSION['user']['surname']); ?></span>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="?logout=true">Ohlásiť</a>
+                <a class="nav-link" href="?logout=true">Odhlásiť</a>
             </li>
         </ul>
     </div>
@@ -168,6 +170,31 @@ displayObjects($objects);
     document.getElementById('displayButton').addEventListener('click', function () {
         document.getElementById('tasks').style.display = "block";
         this.style.display = 'none';
+
+        var sections = [];
+        <?php foreach ($objects as $object) { ?>
+        sections.push('<?php echo $object['section']; ?>');
+        <?php } ?>
+
+        $.ajax({
+            url: 'save_generating.php',
+            method: 'POST',
+            data: {
+                time: <?php echo $_SESSION['time'];?>,
+                sections: sections,
+                student_id: <?php echo $_SESSION['user']['id'];?>,
+                body: 0
+            },
+            success: function(response) {
+                // Close the editing dialog
+                $('#edit-modal').modal('hide');
+                alert("Úprava bola úspešne vykonaná. Obnovte stránku.")
+            },
+            error: function(xhr, status, error) {
+                // Handle the AJAX error here
+                alert("Vyskytla sa chyba. Prosím skúste znova.")
+            }
+        });
     });
 </script>
 <script type="text/javascript" src="student.js"></script>
