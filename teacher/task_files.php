@@ -31,6 +31,19 @@
     </script>
 </head>
 <body>
+<?php
+session_start();
+
+if (!isset($_SESSION['user'])) {
+    echo "<p class='not-logged-in-text'>Nie ste prihlasený. Prihlaste sa <a href='../login.php'>tu</a></p>";
+    exit;
+}
+
+if ($_SESSION['role'] !== 'Učiteľ') {
+    echo "Nemáte povolenia";
+    exit;
+}
+?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
         <ul class="navbar-nav">
@@ -38,38 +51,30 @@
                 <a class="nav-link" href="../index.php">Welcome page</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="./teacher.php"><i class="fa fa-home"></i>Home<span
+                <a class="nav-link" href="./teacher.php"><i class="fa fa-home"></i>Domovská stránka<span
                         class="sr-only">(current)</span></a>
             </li>
             <li class="nav-item active">
-                <a class="nav-link" href="task_files.php"><i class="fa fa-list"></i>Files with tasks</a>
+                <a class="nav-link" href="task_files.php"><i class="fa fa-list"></i>Súbory s úlohami</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="./result_table.php"><i class="fa fa-table"></i>Table with results</a>
+                <a class="nav-link" href="./result_table.php"><i class="fa fa-table"></i>Tabuľka s výsledkami</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="./gen_history.php"><i class="fa fa-history"></i>Generating history</a>
+                <a class="nav-link" href="./gen_history.php"><i class="fa fa-history"></i>História generovania</a>
             </li>
         </ul>
     </div>
 </nav>
-<div id="main-div">
-    <button class="btn btn-primary" id="refresh-button">
-        <i class="fa fa-refresh" style="margin-right: 8px;"></i> Obnoviť súbory
-    </button>
+<div class="main-div">
 
     <?php
-    //session_start();
-    //
-    //if (!isset($_SESSION['user'])) {
-    //    echo "Nie ste prihlasený";
-    //    exit;
-    //}
-    //
-    //if ($_SESSION['role'] !== 'Učiteľ') {
-    //    echo "Nemáte povolenia";
-    //    exit;
-    //}
+
+
+    echo "
+    <button class='btn btn-light' id='refresh-button'>
+        <i class='fa fa-refresh' style='margin-right: 8px;'></i> Obnoviť súbory
+    </button>";
 
     require_once "../config.php";
     global $dbconfig;
@@ -81,15 +86,17 @@
     $result = $db->query($query);
 
     echo '
-            <table class="table table-hover table-auto" id="files-table">
-                <tr>
-                    <th style="display: none"></th>
-                    <th>Nazov suboru</th>
-                    <th>Mozne generovanie</th>
-                    <th>Otvorene</th>
-                    <th>Body</th>
-                    <th></th>
-                </tr>';
+            <table class="table table-hover table-auto table-striped" id="files-table">
+                <thead class="thead-dark">
+                    <tr>
+                        <th style="display: none"></th>
+                        <th>Nazov suboru</th>
+                        <th>Mozne generovanie</th>
+                        <th>Otvorene</th>
+                        <th>Body</th>
+                        <th></th>
+                    </tr>
+                </thead>';
 
     while ($row = $result->fetch_assoc()) {
         echo "<tr data-id='{$row['id']}' data-filename='{$row['filename']}' data-generating-enabled='{$row['generating_enabled']}' data-start-date='{$row['starting_date']}' data-end-date='{$row['ending_date']}' data-points='{$row['points']}'>";

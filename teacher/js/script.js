@@ -78,12 +78,14 @@ $(document).ready(function() {
 
                 // Create the dialog element
                 dialog.innerHTML = `
-                <h2>${filename}</h2>
+                <h2 class="modal-title">${filename}</h2>
             `;
                 dialog.appendChild(table);
             }
 
             const button = document.createElement('button');
+            button.setAttribute("class", "btn btn-secondary");
+            button.setAttribute("type", "button");
             button.innerText = "Zavrieť";
             dialog.appendChild(button);
 
