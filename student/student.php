@@ -27,12 +27,13 @@ $objects = array();
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=zav_zad', 'xkis', 'password');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $pdo->prepare('SELECT t.section, t.task_description, t.solution, t.image_path, f.points, f.generating_enabled, f.starting_date, f.ending_date 
+    $stmt = $pdo->prepare('SELECT t.section, t.task_description, t.solution, t.image_path, f.points, f.generating_enabled, f.starting_date, f.ending_date, t.file_id 
                        FROM tasks t 
                        INNER JOIN files f ON t.file_id = f.id');
     $stmt->execute();
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    $objects_id = array();
     foreach ($rows as $row) {
         $section = $row['section'];
         $task = $row['task_description'];
@@ -54,16 +55,27 @@ try {
         $current_date = time();
         $starting_date = $row['starting_date'] ? strtotime($row['starting_date']) : null;
         $ending_date = $row['ending_date'] ? strtotime($row['ending_date']) : null;
+
+        // Add tasks that meet the conditions to an array under their file id
         if ($generating_enabled == 1 &&
             (($starting_date === null || $current_date >= $starting_date) && ($ending_date === null || $current_date <= $ending_date))) {
-            $objects[] = $object;
+            $file_id = $row['file_id'];
+            if (!isset($objects_id[$file_id])) {
+                $objects_id[$file_id] = array();
+            }
+            $objects_id[$file_id][] = $object;
         }
     }
 
-
+    // Shuffle and select a random item for each file id after adding all the tasks
+    foreach ($objects_id as $file_id => $tasks) {
+        shuffle($tasks);
+        $objects[$file_id] = $tasks[0];
+    }
 } catch (PDOException $e) {
-    echo 'Connection failed: ' . $e->getMessage();
+    echo 'Error: ' . $e->getMessage();
 }
+
 
 function displayObjects($objects): void
 {
@@ -87,10 +99,10 @@ function displayObjects($objects): void
         echo '<div id="' . $object['section'] . '" class="editorContainer mt-4" style="width: 500px; height: 150px;"></div>';
 
         // Submit button
-        echo '<button type="submit" id="submit_' . $object['section'] . '" class="btn btn-primary mt-3">Submit</button>';
+        echo '<button type="submit" id="submit_' . $object['section'] . '" class="btn btn-primary mt-3">Odoslať</button>';
 
         echo '<div id="answer_' . $object['section'] . '" class="answer mt-3"></div>';
-        echo '<p id="points_' . $object['section'] . '">0 / ' . $object['points'] . ' points</p>';
+        echo '<p id="points_' . $object['section'] . '">0 / ' . $object['points'] . ' body</p>';
         echo '<input type="hidden" id="solution_' . $object['section'] . '" value="' . htmlspecialchars($object['solution']) . '">';
 
         echo '</div>';
@@ -124,10 +136,10 @@ function displayObjects($objects): void
     <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
         <ul class="navbar-nav">
             <li class="nav-item">
-                <a class="nav-link" href="../index.php">Welcome page</a>
+                <a class="nav-link" href="../index.php">Registračný formulár</a>
             </li>
             <li class="nav-item active">
-                <a class="nav-link" href="./student.php"><i class="fa fa-home"></i>Home<span
+                <a class="nav-link" href="./student.php"><i class="fa fa-home"></i>Študent<span
                             class="sr-only">(current)</span></a>
             </li>
         </ul>
@@ -136,7 +148,7 @@ function displayObjects($objects): void
                 <span class="navbar-text text-light"><?php echo($_SESSION['user']['name'] . " " . $_SESSION['user']['surname']); ?></span>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="?logout=true">Logout</a>
+                <a class="nav-link" href="?logout=true">Ohlásiť</a>
             </li>
         </ul>
     </div>
