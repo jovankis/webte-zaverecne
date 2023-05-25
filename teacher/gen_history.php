@@ -51,7 +51,6 @@ if (isset($_GET['logout'])) {
     header('Location: ../index.php');
     exit;
 }
-
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,12 +61,12 @@ if (isset($_GET['logout'])) {
             <li class="nav-item">
                 <a class="nav-link" href="./teacher.php"><i class="fa fa-home"></i>Domovská stránka - Súbory s úlohami</a>
             </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="./result_table.php"><i class="fa fa-table"></i>Tabuľka s výsledkami<span
-                        class="sr-only">(current)</span></a>
-            </li>
             <li class="nav-item">
-                <a class="nav-link" href="./gen_history.php"><i class="fa fa-history"></i>História generovania</a>
+                <a class="nav-link" href="./result_table.php"><i class="fa fa-table"></i>Tabuľka s výsledkami</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="./gen_history.php"><i class="fa fa-history"></i>História generovania<span
+                        class="sr-only">(current)</span></a>
             </li>
         </ul>
         <ul class="navbar-nav">
@@ -83,12 +82,13 @@ if (isset($_GET['logout'])) {
 <div class="main-div">
     <?php
     require_once "../config.php";
+    date_default_timezone_set('Europe/Bratislava');
     global $dbconfig;
     $db = new mysqli();
     $db->connect($dbconfig['hostname'], $dbconfig['username'], $dbconfig['password']);
     $db->select_db($dbconfig['database']);
 
-    $query = "SELECT * FROM student_answer";
+    $query = "SELECT gen_history.*, users.name, users.surname FROM gen_history JOIN users ON gen_history.student_id = users.id;";
     $stmt = $db->prepare($query);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -97,33 +97,35 @@ if (isset($_GET['logout'])) {
             <table class="table table-hover table-auto table-striped" id="results-table">
                 <thead class="thead-dark">
                     <tr>
+                        <th>Študent</th>
                         <th>Úloha</th>
-                        <th>ID študenta</th>
-                        <th>Meno</th>
-                        <th>Priezvisko</th>
-                        <th>Odpoveď</th>
-                        <th>Získané body</th>
+                        <th>Dátum a čas generovania</th>
+                        <th>Odovzdané</th>
+                        <th>Body</th>
+                        <th>Úspešné</th>
                     </tr>
                 </thead>';
         while ($row = $result->fetch_assoc()) {
             echo "<tr>";
+            echo "<td>{$row['name']} {$row['surname']}</td>";
             echo "<td>{$row['section']}</td>";
-            echo "<td>{$row['student_id']}</td>";
-            echo "<td>{$row['name']}</td>";
-            echo "<td>{$row['surname']}</td>";
-            echo "<td>{$row['answer']}</td>";
-            echo "<td>0</td>";
+            $readableDateTime = date('Y-m-d H:i:s', $row['time']);
+            echo "<td>$readableDateTime</td>";
+            if($row['submitted']){
+                echo "<td>Áno</td>";
+                echo "<td>{$row['body']}</td>";
+                echo "<td>{$row['successful']}</td>";
+            } else {
+                echo "<td>Nie</td>";
+                echo "<td>0 (neodovzdané)</td>";
+                echo "<td>Nie (neodovzdané)</td>";
+            }
             echo "</tr>";
         }
-
-        echo '<button class="btn btn-light" id="download-csv-button">
-                    <i class="fa fa-download" style="margin-right: 8px;"></i> Stiahnut ako CSV subor
-                </button>';
     } else {
         echo "No results found";
     }
     ?>
-
 </div>
 </body>
 </html>
