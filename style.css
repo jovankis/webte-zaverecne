@@ -25,3 +25,14 @@ input.invalid-input {
 #files-table {
     width:auto;
 }
+
+#refresh-button {
+    margin: 0 auto 1rem auto;
+}
+
+#main-div {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+}

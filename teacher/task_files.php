@@ -8,12 +8,27 @@
     <title>Math website</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script src="//cdn.datatables.net/1.13.2/js/jquery.dataTables.min.js"></script>
+
+    <script src="js/script.js"></script>
+
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/javascript" id="MathJax-script" async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+    </script>
+
+    <script>
+        MathJax = {
+            loader: {load: ['input/asciimath', 'output/chtml']}
+        }
+    </script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -38,7 +53,11 @@
         </ul>
     </div>
 </nav>
-<div id="container">
+<div id="main-div">
+    <button class="btn btn-primary" id="refresh-button">
+        <i class="fa fa-refresh" style="margin-right: 8px;"></i> Obnoviť súbory
+    </button>
+
     <?php
     //session_start();
     //
@@ -52,102 +71,85 @@
     //    exit;
     //}
 
-    // TODO: edit to get file paths from db
-    $directory = '../files'; // Replace with the path to the directory you want to list
+    require_once "../config.php";
+    global $dbconfig;
+    $db = new mysqli();
+    $db->connect($dbconfig['hostname'], $dbconfig['username'], $dbconfig['password']);
+    $db->select_db($dbconfig['database']);
 
-    if (is_dir($directory)) {
-        $files = scandir($directory);
+    $query = "SELECT * FROM files";
+    $result = $db->query($query);
 
-        // Remove the "." and ".." entries from the list
-        $files = array_diff($files, array('.', '..'));
-        $files = array_diff($files, ['images']);
-        if (count($files) > 0) {
-            echo '
-        <table class="table table-hover table-auto" id="files-table">
-            <tr>
-                <th>Nazov suboru</th>
-            </tr>';
+    echo '
+            <table class="table table-hover table-auto" id="files-table">
+                <tr>
+                    <th style="display: none"></th>
+                    <th>Nazov suboru</th>
+                    <th>Mozne generovanie</th>
+                    <th>Otvorene</th>
+                    <th>Body</th>
+                    <th></th>
+                </tr>';
 
-            foreach ($files as $file) {
-                echo $directory . "/" . $file;
-                echo "<tr><td>{$file}</td></tr>";
-            }
-
-            echo '
-        </table>';
-
-        } else {
-            echo "Directory is empty. No files found";
-        }
-    } else {
-        echo "Invalid directory.";
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr data-id='{$row['id']}' data-filename='{$row['filename']}' data-generating-enabled='{$row['generating_enabled']}' data-start-date='{$row['starting_date']}' data-end-date='{$row['ending_date']}' data-points='{$row['points']}'>";
+        echo "<td>{$row['filename']}</td>";
+        $generating_enabled = $row['generating_enabled'] ? "Ano" : "Nie";
+        echo "<td>$generating_enabled</td>";
+        $dates = $row['starting_date'] != null && $row['ending_date'] != null ? $row['starting_date'] . "/" . $row['ending_date'] : "Nedefinovane";
+        echo "<td>$dates</td>";
+        echo "<td>{$row['points']}</td>";
+        echo "<td><button id='edit-btn' class='btn btn-success'><i class=\"fa fa-pencil\"></i>Edit</button></td>";
+        echo "</tr>";
     }
 
-
+    echo '
+        </table>';
     ?>
 </div>
-<?php
-$latexFile = "../files/odozva01pr.tex";
-// Read the contents of the LaTeX file
-$latexContent = file_get_contents($latexFile);
 
-// Parse the content into objects
-$objects = array();
-preg_match_all('/\\\\section\*{(.+?)}\s*\\\\begin{task}(.*?)\\\\end{task}\s*\\\\begin{solution}(.*?)\\\\end{solution}/s', $latexContent, $matches, PREG_SET_ORDER);
-foreach ($matches as $match) {
-    $section = $match[1];
-    $task = trim($match[2]);
-    $solution = trim($match[3]);
 
-    $taskEquation = '';
-    $solutionQuestion = '';
-    $imagePath = '';
-
-    // Extract task equation
-    preg_match('/\\\\begin{equation\*}(.*?)\\\\end{equation\*}/s', $task, $taskEquationMatch);
-    if (!empty($taskEquationMatch[1])) {
-        $taskEquation = trim($taskEquationMatch[1]);
-    }
-
-    // Extract solution question
-    preg_match('/\\\\begin{equation\*}(.*?)\\\\end{equation\*}/s', $solution, $solutionQuestionMatch);
-    if (!empty($solutionQuestionMatch[1])) {
-        $solutionQuestion = trim($solutionQuestionMatch[1]);
-    }
-
-    // Extract image path
-    preg_match('/\\\\includegraphics(?:\[.*?\])?\{(.+?)\}/', $task, $imagePathMatch);
-    if (!empty($imagePathMatch[1])) {
-        $imagePath = $imagePathMatch[1];
-        $task = preg_replace('/\\\\includegraphics(?:\[.*?\])?\{(.+?)\}/', '', $task);
-        $task = trim($task);
-    }
-
-    // Create object
-    $object = array(
-        'section' => $section,
-        'task' => $task,
-        'taskEquation' => $taskEquation,
-        'solution' => $solution,
-        'solutionQuestion' => $solutionQuestion,
-        'imagePath' => $imagePath
-    );
-
-    // Add object to the list
-    $objects[] = $object;
-}
-
-// Output the objects
-foreach ($objects as $object) {
-    echo "Section: " . $object['section'] . "<br>";
-    echo "Task: " . $object['task'] . "<br>";
-    echo "Task Equation: " . $object['taskEquation'] . "<br>";
-    echo "Solution: " . $object['solution'] . "<br>";
-    echo "Solution Question: " . $object['solutionQuestion'] . "<br>";
-    echo "Image Path: " . $object['imagePath'] . "<br>";
-    echo "<br>";
-}
-?>
+<div class="modal fade" id="edit-modal" tabindex="-1" role="dialog" aria-labelledby="edit-modal-label"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edit-modal-label">Edit Placement</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="edit-modal-id">
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="edit-modal-generating-enabled">
+                            <label class="form-check-label" for="edit-modal-generating-enabled">Je možné generovat
+                                príklady</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-modal-start-date">Dátum začatia:</label>
+                        <input type="date" class="form-control" id="edit-modal-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-modal-end-date">Dátum ukončenia:</label>
+                        <input type="date" class="form-control" id="edit-modal-end-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-modal-points">Počet bodov za každú úlohu:</label>
+                        <input type="number" class="form-control" id="edit-modal-points" min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Zrušiť</button>
+                <button type="button" class="btn btn-primary" id="edit-modal-save">Uložiť</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
