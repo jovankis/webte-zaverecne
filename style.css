@@ -22,9 +22,13 @@ input.invalid-input {
     padding-top: 1rem;
 }
 
-#files-table, #results-table {
+#files-table {
     width:auto;
     cursor: pointer;
+}
+
+#results-table {
+    width: auto;
 }
 
 #refresh-button, #download-csv-button {
@@ -44,3 +48,20 @@ input.invalid-input {
     text-align: center;
     margin-top: 3rem;
 }
+
+#tutorial {
+    width: 75%;
+    /*padding: 3rem;*/
+    margin: auto;
+    text-align: center;
+    align-items: center;
+}
+
+#download-tutorial-button {
+    width: 20%;
+    margin: auto;
+}
+.tutorial-div {
+    margin-bottom: 50px;
+}
+

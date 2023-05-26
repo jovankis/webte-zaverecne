@@ -69,6 +69,9 @@ if (isset($_GET['logout'])) {
             <li class="nav-item">
                 <a class="nav-link" href="./gen_history.php"><i class="fa fa-history"></i>História generovania</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="./tutorial.php"><i class="fa fa-file"></i>Návod</a>
+            </li>
         </ul>
         <ul class="navbar-nav">
             <li class="nav-item">
